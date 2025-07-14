@@ -1,0 +1,32 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies including Docker CLI
+RUN apt-get update && apt-get install -y \
+    curl \
+    docker.io \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy webhook script
+COPY remediation_scripts/alert_webhook.py .
+COPY remediation_scripts/ ./remediation_scripts/
+
+# Make scripts executable
+RUN chmod +x remediation_scripts/*.sh
+
+# Create log directory
+RUN mkdir -p /var/log
+
+# Expose port
+EXPOSE 5001
+
+# Run the webhook service
+CMD ["python", "alert_webhook.py"]

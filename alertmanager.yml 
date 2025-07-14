@@ -1,0 +1,36 @@
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'saikumarsaddi07@gmail.com'
+  smtp_auth_username: 'saikumarsaddi07@gmail.com'
+  smtp_auth_password: ''  # Use Gmail App Password
+  smtp_require_tls: true
+
+route:
+  group_by: ['alertname']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'web.hook'
+
+receivers:
+  - name: 'web.hook'
+    email_configs:
+      - to: 'saikumarsaddi07@gmail.com'
+        headers:
+          Subject: 'Alert: {{ .GroupLabels.alertname }}'
+        html: |
+          <p>{{ range .Alerts }}
+          <strong>Alert:</strong> {{ .Annotations.summary }}<br/>
+          <strong>Description:</strong> {{ .Annotations.description }}<br/><br/>
+          {{ end }}</p>
+
+    webhook_configs:
+      - url: 'http://alert-webhook:5001/webhook'
+        send_resolved: true
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
